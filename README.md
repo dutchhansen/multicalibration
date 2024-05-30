@@ -103,4 +103,4 @@ While this example uses pre-defined hyperparameters for the base predictor, it i
 
 ## Acknowledgements
 
-The [WILDS Benchmark](https://github.com/p-lambda/wilds) provided partial inspiration for the desing of this repository. We thank Bhavya Vasudeva for sharing resources that became helpful in its development.
+The [WILDS Benchmark](https://github.com/p-lambda/wilds) provided partial inspiration for the design of this repository. We thank Bhavya Vasudeva for sharing resources that became helpful in its development.
