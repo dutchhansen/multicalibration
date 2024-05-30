@@ -1,0 +1,101 @@
+from utils import href
+import os
+import pandas as pd
+import numpy as np
+
+def groups_map(features_df, groups='default'):
+    df = features_df
+    groups_map = {
+        # jobs
+        'Job = Management': np.where(df['job'] == 'management')[0],
+        'Job = Technician': np.where(df['job'] == 'technician')[0],
+        'Job = Entrepreneur': np.where(df['job'] == 'entrepreneur')[0],
+        'Job = Blue-Collar': np.where(df['job'] == 'blue-collar')[0],
+        'Job = Retired': np.where(df['job'] == 'retired')[0],
+        # marital
+        'Marital = Married': np.where(df['marital'] == 'married')[0],
+        'Marital = Single': np.where(df['marital'] == 'single')[0],
+        # education
+        'Education = Primary': np.where(df['education'] == 'primary')[0],
+        'Education = Secondary': np.where(df['education'] == 'secondary')[0],
+        'Education = Tertiary': np.where(df['education'] == 'tertiary')[0],
+        # housing
+        'Housing = Yes': np.where(df['housing'] == 'yes')[0],
+        'Housing = No': np.where(df['housing'] == 'no')[0],
+        # age
+        'Age < 30': np.where(df['age'] < 30)[0],
+        '30 <= Age < 40': np.where((df['age'] >= 30) & (df['age'] < 40))[0],
+        'Age >= 50': np.where((df['age'] >= 50))[0],
+    }
+    return groups_map
+
+
+def load_BankMarketing_no_job():
+    return load_BankMarketing(drop_features=['job'])
+
+
+def load_BankMarketing(drop_features=[], groups='default'):
+    '''
+    Dataset documents phone calls made by Portuguese banking institution 
+    during several marketing campaigns. The goal is to predict whether a a client
+    will subscribe to a term deposit or not.
+
+    Input (x): Single phone call.
+    Label (y): A 'yes' or 'no' in 'y' column.
+
+    Website:
+        https://archive.ics.uci.edu/dataset/222/bank+marketing
+
+    Original publication:
+        @misc{misc_statlog_(german_credit_data)_144,
+            author       = {Hofmann,Hans},
+            title        = {{Statlog (German Credit Data)}},
+            year         = {1994},
+            howpublished = {UCI Machine Learning Repository},
+            note         = {{DOI}: https://doi.org/10.24432/C5NC77}
+        }
+
+    License:
+        This dataset is licensed under a Creative Commons Attribution 4.0 
+        International (CC BY 4.0) license. This allows for the sharing and adaptation 
+        of the datasets for any purpose, provided that the appropriate credit is given.
+    '''
+
+    DATA_DIR = 'data/BankMarketing/'
+    DOWNLOAD_URL = 'https://archive.ics.uci.edu/dataset/222/bank+marketing'
+
+    # check if BankMarketing directory exists
+    if not os.path.exists(DATA_DIR):
+        raise ValueError(f'Please download from {href(DOWNLOAD_URL)}, and extract \'bank-full.csv\' to data/BankMarketing/')
+
+    df = pd.read_csv(DATA_DIR + 'bank-full.csv', sep=';')
+
+    # handling missing values
+    df.drop(columns=['day'], inplace=True)  # remove 'day' column
+    df.replace(" ?", pd.NA, inplace=True)  # replace ' ?' with NA
+    df.dropna(inplace=True)  # drop NA values
+    df["age"] = df["age"].astype(int).apply(lambda x: round(x / 5) * 5)
+
+    # define groups
+    gm = groups_map(df, groups)
+
+    # record groups and names
+    groups, group_names = [], []
+    for group in gm:
+        groups.append(gm[group])
+        group_names.append(group)
+
+    # record labels as 1 or 0
+    y = df['y'].apply(lambda x: 1 if x == 'yes' else 0).values
+    df = df.drop(columns=['y'])
+
+    # drop features
+    df = df.drop(drop_features, axis=1)
+
+    # encode categorical features using get_dummies
+    categories = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'poutcome']
+    categorical = [c for c in categories if c in df.columns]
+    X = pd.get_dummies(df, columns=categorical, drop_first=True)
+    X = X.values.astype(float)
+
+    return X, y, (groups, group_names)
