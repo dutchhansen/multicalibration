@@ -60,21 +60,21 @@ calib_frac = 0.4
 seed = 0
 
 # set the save directory and wandb project
-save_dir = 'models/saved_models/{dataset}/{model_name}/calib={calib_frac}_val_seed={seed}/'
+save_dir = f'models/saved_models/{dataset}/{model_name}/calib={calib_frac}_val_seed={seed}/'
 wdb_project = f'{dataset}_project'
 
 # define config for experiment
 hyp = get_hyperparameters(model_name, dataset, calib_frac)
 config = {
-    'model': model_name,        # model name
-    'dataset': dataset,         # dataset name
-    'calib_frac': calib_frac,   # calibration fraction
+    'model': model_name,        # track model in log
+    'mcb': [mcb_algorithm],     # track mcb algorithm in log
+    'dataset': dataset,         # track dataset name in log
+    'calib_frac': calib_frac,   # fraction of train set used in mcb
     'val_split_seed': seed,     # seed for validation split
-    'split': SPLIT_DEFAULT,     # default split
-    'mcb': [mcb_algorithm],     # just to keep track of mcb algorithm
-    'save_dir': save_dir,       # save directory
-    'val_save_epoch': 0,        # epoch after which we save model
-    'val_eval_epoch': 1,        # eval model when epoch % val_eval_epoch == 0
+    'split': SPLIT_DEFAULT,     # train-val-test split
+    'save_dir': save_dir,       # where to save model, if appropriate
+    'val_save_epoch': 0,        # save model when val_save_epoch >= 0
+    'val_eval_epoch': 1,        # eval model when (epoch % val_eval_epoch) == 0
     **hyp
 }
 
