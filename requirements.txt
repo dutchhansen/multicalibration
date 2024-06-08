@@ -17,3 +17,4 @@ tqdm==4.66.1
 transformers==4.36.2
 wandb==0.16.1
 wget==3.2
+xlrd==2.0.1

@@ -1,7 +1,10 @@
-import numpy as np
+from dataloaders.utils.download_utils import download_dataset
+from configs.downloads import req_files, req_urls
+import shutil
+import zipfile
 import os
 import pandas as pd
-from utils import href
+import numpy as np
 
 def groups_map(features_df, groups='default'):
     df = features_df
@@ -57,18 +60,36 @@ def load_CreditDefault(drop_features=[], groups='default'):
         of the datasets for any purpose, provided that the appropriate credit is given.
     
     """
+
     DATA_DIR = 'data/CreditDefault/'
-    DOWNLOAD_URL = 'https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients'
-    FILE_NAME = 'default of credit card clients.xls'
+    DATASET_NAME = 'CreditDefault'
+    FILE_NAMES = req_files(DATASET_NAME)
+    FILE_URLS = req_urls(DATASET_NAME)
 
     # check if we need to download
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
-    if not os.path.exists(DATA_DIR + FILE_NAME):
-        raise ValueError(f'Please download the dataset from {href(DOWNLOAD_URL)} and extract it to {DATA_DIR}')
+
+    # check if any file missing
+    if not all([os.path.exists(DATA_DIR + f) for f in FILE_NAMES]):
+
+        # delete any existing files/dirs
+        files = os.listdir(DATA_DIR)
+        for fn in files:
+            if os.path.exists(DATA_DIR + fn):
+                # if is file / dir
+                if os.path.isfile(DATA_DIR + fn):
+                    os.remove(DATA_DIR + fn)
+                else:
+                    shutil.rmtree(DATA_DIR + fn)
+        
+        # download the dataset
+        for url in FILE_URLS:
+            download_dataset(DATASET_NAME, DATA_DIR, url)
 
     # Load data with pandas
-    df = pd.read_excel(DATA_DIR + FILE_NAME, header=1)
+    file_name = 'default of credit card clients.xls'
+    df = pd.read_excel(DATA_DIR + file_name, header=1)
 
     # Extract Y and drop it from the dataframe
     y = df['default payment next month'].values

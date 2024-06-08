@@ -47,11 +47,25 @@ import time
 import torch
 from torch.utils.model_zoo import tqdm
 
+import requests
+from utils import href
 
 ##
 ## WILDS, with slight modifications
+## Added function for downloading csvs
 ##
 def download_dataset(dataset_name, dir, download_url):
+    # set default archive parameters
+    filename = 'archive.tar.gz'
+    remove_finished = True
+
+    # if csv, download as csv, don't remove
+    if _is_csv_or_txt(download_url):
+        filename = download_url.split('/')[-1]
+        remove_finished = False
+    elif _is_zip(download_url):
+        filename = download_url.split('/')[-1]
+
     # Check that download_url exists.
     if download_url is None:
         raise ValueError(f'{dataset_name} dataset cannot be automatically downloaded. Please download it manually.')
@@ -63,12 +77,12 @@ def download_dataset(dataset_name, dir, download_url):
         download_and_extract_archive(
             url=download_url,
             download_root=dir,
-            filename='archive.tar.gz',
-            remove_finished=True)
+            filename=filename,
+            remove_finished=remove_finished)
         download_time_in_minutes = (time.time() - start_time) / 60
         print(f"\nIt took {round(download_time_in_minutes, 2)} minutes to download and uncompress the dataset.\n")
     except Exception as e:
-        print(f"\n{os.path.join(dir, 'archive.tar.gz')} may be corrupted. Please try deleting it and rerunning this command.\n")
+        print(f"\n{os.path.join(dir, filename)} may be corrupted. Please try deleting it and rerunning this command.\n")
         print(f"Exception: ", e)
 
 
@@ -106,6 +120,11 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
         return True
     return check_md5(fpath, md5)
 
+def download_csv(url: str, fpath: str) -> None:
+    req = requests.get(url)
+    with open(fpath, 'wb') as f:
+        f.write(req.content)
+
 
 def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, size: Optional[int] = None) -> None:
     """Download a file from a url and place it in root.
@@ -131,10 +150,17 @@ def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optio
     else:   # download the file
         try:
             print('Downloading ' + url + ' to ' + fpath)
-            urllib.request.urlretrieve(
-                url, fpath,
-                reporthook=gen_bar_updater(size)
-            )
+
+            # check for csv
+            if filename.endswith('.csv'):
+                print('Downloading csv file')
+                download_csv(url, fpath)
+
+            else:
+                urllib.request.urlretrieve(
+                    url, fpath,
+                    reporthook=gen_bar_updater(size)
+                )
         except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
             if url[:5] == 'https':
                 url = url.replace('https:', 'http:')
@@ -275,6 +301,9 @@ def _is_gzip(filename: str) -> bool:
 def _is_zip(filename: str) -> bool:
     return filename.endswith(".zip")
 
+def _is_csv_or_txt(filename: str) -> bool:
+    return filename.endswith(".csv") or filename.endswith(".txt")
+
 
 def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> None:
     if to_path is None:
@@ -296,7 +325,10 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
     elif _is_zip(from_path):
         with zipfile.ZipFile(from_path, 'r') as z:
             z.extractall(to_path)
+    elif _is_csv_or_txt(from_path):
+        pass
     else:
+        print(href(f'Extraction of {from_path} not supported'))
         raise ValueError("Extraction of {} not supported".format(from_path))
 
     if remove_finished:

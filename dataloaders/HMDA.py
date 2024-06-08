@@ -1,8 +1,10 @@
+from dataloaders.utils.download_utils import download_dataset
+from configs.downloads import req_files, req_urls
 import wget
 import os
 import pandas as pd
 import numpy as np
-from utils import href
+import shutil
 
 def groups_map(features_df, groups='default', preprocessed=True):
     df = features_df
@@ -80,18 +82,50 @@ def load_processed_HMDA(drop_features=[], groups='default'):
     License:
         MIT License. 2023.
     """
+
+    DATA_DIR = 'data/preprocessed_HMDA_TX/'
+    DATASET_NAME = 'HMDA'
+    FILE_NAMES = req_files(DATASET_NAME)
+    FILE_URLS = req_urls(DATASET_NAME)
+
+    # check if we need to download
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+
+    # check if any file missing
+    if not all([os.path.exists(DATA_DIR + f) for f in FILE_NAMES]):
+
+        # delete any existing files/dirs
+        files = os.listdir(DATA_DIR)
+        for fn in files:
+            if os.path.exists(DATA_DIR + fn):
+                # if is file / dir
+                if os.path.isfile(DATA_DIR + fn):
+                    os.remove(DATA_DIR + fn)
+                else:
+                    shutil.rmtree(DATA_DIR + fn)
+        
+        # download the dataset
+        for url in FILE_URLS:
+            download_dataset(DATASET_NAME, DATA_DIR, url)
+
+        # extract files from subdirs in original zip
+        # list existing paths 
+        paths = []
+        for root, dirs, files in os.walk(DATA_DIR):
+            for file in files:
+                paths.append(os.path.join(root, file))
+        # extract files from subdirs
+        for p in paths:
+            shutil.move(p, DATA_DIR + p.split('/')[-1])
+            
+        # remove empty dir from download
+        shutil.rmtree(DATA_DIR + 'data')
+
+    
     X_path = 'data/preprocessed_HMDA_TX/2017-TX-features.csv'
     y_path = 'data/preprocessed_HMDA_TX/2017-TX-target.csv'
     demographics_path = 'data/preprocessed_HMDA_TX/2017-TX-protected.csv'
-    download_url = 'https://github.com/pasta41/hmda-data-2017/tree/main/2017/TX'
-
-    # check if HMDA directory exists
-    if (not os.path.exists(X_path) or 
-        not os.path.exists(y_path) or 
-        not os.path.exists(demographics_path)):
-        os.makedirs('data/preprocessed_HMDA_TX/')
-        raise ValueError(f'Please download all files at {href(download_url)} and extract the files to data/preprocessed_HMDA_TX/')
-
     X_df = pd.read_csv(X_path)
     y_df = pd.read_csv(y_path)
     demographics_df = pd.read_csv(demographics_path)

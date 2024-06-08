@@ -1,4 +1,7 @@
-from utils import href
+from dataloaders.utils.download_utils import download_dataset
+from configs.downloads import req_files, req_urls
+import shutil
+import zipfile
 import os
 import pandas as pd
 import numpy as np
@@ -62,11 +65,41 @@ def load_BankMarketing(drop_features=[], groups='default'):
     '''
 
     DATA_DIR = 'data/BankMarketing/'
-    DOWNLOAD_URL = 'https://archive.ics.uci.edu/dataset/222/bank+marketing'
+    DATASET_NAME = 'BankMarketing'
+    FILE_NAMES = req_files(DATASET_NAME)
+    FILE_URLS = req_urls(DATASET_NAME)
 
-    # check if BankMarketing directory exists
+    # check if we need to download
     if not os.path.exists(DATA_DIR):
-        raise ValueError(f'Please download from {href(DOWNLOAD_URL)}, and extract \'bank-full.csv\' to data/BankMarketing/')
+        os.makedirs(DATA_DIR)
+
+    # check if any file missing
+    if not all([os.path.exists(DATA_DIR + f) for f in FILE_NAMES]):
+
+        # delete any existing files/dirs
+        files = os.listdir(DATA_DIR)
+        for fn in files:
+            if os.path.exists(DATA_DIR + fn):
+                # if is file / dir
+                if os.path.isfile(DATA_DIR + fn):
+                    os.remove(DATA_DIR + fn)
+                else:
+                    shutil.rmtree(DATA_DIR + fn)
+        
+        # download the dataset
+        for url in FILE_URLS:
+            download_dataset(DATASET_NAME, DATA_DIR, url)
+
+        # remove 'bank-additional.zip' file
+        os.remove(DATA_DIR + 'bank-additional.zip')
+        # unzip remaining file
+        with zipfile.ZipFile(DATA_DIR + 'bank.zip', 'r') as z:
+            z.extractall(DATA_DIR + 'bank_temp')
+        # move 'bank-full.csv' to root
+        shutil.move(DATA_DIR + 'bank_temp/bank-full.csv', DATA_DIR + 'bank-full.csv')
+        # remove 'bank_temp' dir and 'bank.zip'
+        shutil.rmtree(DATA_DIR + 'bank_temp')
+        os.remove(DATA_DIR + 'bank.zip')
 
     df = pd.read_csv(DATA_DIR + 'bank-full.csv', sep=';')
 

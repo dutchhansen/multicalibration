@@ -68,8 +68,8 @@ def load_WaterBirds(groupset='default'):
     # check if we need to download
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
+        
     # check if any file missing
-    missing_files = [f for f in FILE_NAMES if not os.path.exists(DATA_DIR + f)]
     if not all([os.path.exists(DATA_DIR + f) for f in FILE_NAMES]):
         
         # delete any existing files/dirs

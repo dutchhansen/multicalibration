@@ -323,12 +323,12 @@ def groups_info_str(X, y, gps, gp_names):
     Print groups and their sizes.
     """
     ptab = PrettyTable()
-    ptab.field_names = ['group name', 'n samples', 'fraction', 'y-mean']
+    ptab.field_names = ['idx', 'group name', 'n samples', 'fraction', 'y-mean']
     df = groups_info_df(X, y, gps, gp_names)
     n = len(df)
 
     for i, row in df.iterrows():
-        ptab.add_row(row, divider=(i == n-2))
+        ptab.add_row([i] + row.tolist(), divider=(i == n-2))
     
     ptab.align = 'r'
     ptab.align['group name'] = 'l'

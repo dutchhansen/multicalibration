@@ -1,7 +1,10 @@
-import wget
-import os
+from utils import href
+from dataloaders.utils.download_utils import download_dataset
+from configs.downloads import req_files, req_urls
 import pandas as pd
 import numpy as np
+import shutil
+import os
 
 
 def groups_map(features_df, groups='default'):
@@ -66,11 +69,30 @@ def load_MEPS(drop_features=[], groups='default'):
     """
 
     DATA_DIR = 'data/MEPS/'
-    DOWNLOAD_URL = 'https://github.com/alangee/FaiR-N/tree/master'
+    DATASET_NAME = 'MEPS'
+    FILE_NAMES = req_files(DATASET_NAME)
+    FILE_URLS = req_urls(DATASET_NAME)
 
-    # check if BankMarketing directory exists
+    # check if we need to download
     if not os.path.exists(DATA_DIR):
-        raise ValueError(f'Please download from {DOWNLOAD_URL}, and extract .csv files to data/MEPS/')
+        os.makedirs(DATA_DIR)
+
+    # check if any file missing
+    if not all([os.path.exists(DATA_DIR + f) for f in FILE_NAMES]):
+
+        # delete any existing files/dirs
+        files = os.listdir(DATA_DIR)
+        for fn in files:
+            if os.path.exists(DATA_DIR + fn):
+                # if is file / dir
+                if os.path.isfile(DATA_DIR + fn):
+                    os.remove(DATA_DIR + fn)
+                else:
+                    shutil.rmtree(DATA_DIR + fn)
+        
+        # download the dataset
+        for url in FILE_URLS:
+            download_dataset(DATASET_NAME, DATA_DIR, url)
 
     # read in all data
     df_train = pd.read_csv(DATA_DIR + 'meps_train_processed.csv').astype(float)
