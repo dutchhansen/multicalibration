@@ -100,6 +100,18 @@ experiment.init_logger(finish=True)
 
 While this example uses pre-defined hyperparameters for the base predictor, it is possible to specify custom hyperparameters. To do this, change the appropriate key-value pairs on the `config` dictionary. To see available and required hyperparameters for each base predictor, examine `configs/hyperparameters.py`.
 
+Our multicalibration implementations are based on code provided by Eric Zhao https://github.com/ericzhao28/multicalibration and also the repository https://github.com/sanatonek/fairness-and-callibration/tree/master.
+
+## Citation
+If you found our code to be useful, please consider citing our work.
+```
+@article{hansen2024multicalibration,
+  title={When is Multicalibration Post-Processing Necessary?},
+  author={Hansen, Dutch and Devic, Siddartha and Nakkiran, Preetum and Sharan, Vatsal},
+  journal={arXiv preprint arXiv:2406.06487},
+  year={2024}
+}
+```
 
 ## Acknowledgements
 
